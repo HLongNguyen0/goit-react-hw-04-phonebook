@@ -1,16 +1,14 @@
 import React from "react";
-import { nanoid } from "nanoid";
 
 export default function Contacts({ contacts, handleDelete }) {
-  return contacts.map((contact, index) => {
-    const id = nanoid();
+  return contacts.map((contact) => {
     return (
-      <p key={id}>
+      <p key={contact.id}>
         {contact.name}: {contact.number}
         <button
           type="button"
           onClick={() => {
-            handleDelete(index);
+            handleDelete(contact.id);
           }}
         >
           Delete

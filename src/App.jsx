@@ -1,108 +1,104 @@
-import { Component } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Filter } from "./App.styled";
 import Contacts from "./components/Contacts/Contacts";
 import FilteredContacts from "./components/FilteredContacts/FilteredContacts";
 import Phonebook from "./components/Phonebook/Phonebook";
 import Section from "./components/Section/Section";
+import { nanoid } from "nanoid";
 
-class App extends Component {
-  state = {
-    contacts: [
-      { id: "id-1", name: "Rosie Simpson", number: "459-12-56" },
-      { id: "id-2", name: "Hermione Kline", number: "443-89-12" },
-      { id: "id-3", name: "Eden Clements", number: "645-17-79" },
-      { id: "id-4", name: "Annie Copeland", number: "227-91-26" },
-    ],
-    filter: "",
-    name: "",
-    number: "",
-  };
+function App() {
+  const [contacts, setConctacts] = useState([
+    { id: "id-1", name: "Rosie Simpson", number: "459-12-56" },
+    { id: "id-2", name: "Hermione Kline", number: "443-89-12" },
+    { id: "id-3", name: "Eden Clements", number: "645-17-79" },
+    { id: "id-4", name: "Annie Copeland", number: "227-91-26" },
+  ]);
+  const [name, setName] = useState("");
+  const [number, setNumber] = useState("");
+  const [filter, setFilter] = useState("");
 
-  componentDidMount() {
-    const data = JSON.parse(localStorage.getItem("contacts"));
+  const skipMount = useRef(true);
+
+  useEffect(() => {
+    const data = localStorage.getItem("contacts");
     if (data) {
-      this.setState({ contacts: data });
+      setConctacts(JSON.parse(data));
     }
-    console.log(data);
-  }
+  }, []);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (this.state.contacts !== prevState.contacts) {
-      localStorage.setItem("contacts", JSON.stringify(this.state.contacts));
+  useEffect(() => {
+    if (!skipMount.current) {
+      localStorage.setItem("contacts", JSON.stringify(contacts));
     }
-  }
+    skipMount.current = false;
+  }, [contacts]);
 
-  hanleInput = (e) => {
-    this.setState({ [e.target.name]: e.target.value });
+  const handleInput = (e) => {
+    switch (e.target.name) {
+      case "name":
+        setName(e.target.value);
+        break;
+      case "number":
+        setNumber(e.target.value);
+        break;
+      case "filter":
+        setFilter(e.target.value);
+        break;
+      default:
+        return;
+    }
   };
 
-  hadleSubmit = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (
-      this.state.contacts.find(
-        (contact) => contact.name === e.target.name.value
-      )
-    ) {
+    const id = nanoid();
+    if (contacts.find((contact) => contact.name === e.target.name.value)) {
       return alert(e.target.name.value + " is already in contacts");
     }
-    this.setState((prevState) => {
-      const newContact = { name: prevState.name, number: prevState.number };
-      return {
-        contacts: [...prevState.contacts, newContact],
-      };
-    });
-    this.reset();
+    setConctacts((contacts) => [
+      ...contacts,
+      { id: id, name: name, number: number },
+    ]);
+    reset();
   };
 
-  reset = () => {
-    this.setState({ name: "", number: "" });
+  const reset = () => {
+    setName("");
+    setNumber("");
   };
 
-  handleDelete = (index) => {
-    this.setState((prevState) => {
-      const newArray = prevState.contacts;
-      newArray.splice(index, 1);
-      return {
-        contacts: [...newArray],
-      };
-    });
-  };
-
-  render() {
-    return (
-      <>
-        <Section title="Phonebook">
-          <Phonebook
-            handleInput={this.hanleInput}
-            handleSubmit={this.hadleSubmit}
-            name={this.state.name}
-            number={this.state.number}
-          />
-        </Section>
-        <Section title="Contacts">
-          <>
-            <Filter
-              name="filter"
-              value={this.state.filter}
-              onChange={this.hanleInput}
-            />
-            {this.state.filter === "" ? (
-              <Contacts
-                contacts={this.state.contacts}
-                handleDelete={this.handleDelete}
-              />
-            ) : (
-              <FilteredContacts
-                contacts={this.state.contacts}
-                filter={this.state.filter}
-                handleDelete={this.handleDelete}
-              />
-            )}
-          </>
-        </Section>
-      </>
+  const handleDelete = (index) => {
+    setConctacts((contacts) =>
+      contacts.filter((contact) => index !== contact.id)
     );
-  }
+  };
+
+  return (
+    <>
+      <Section title="Phonebook">
+        <Phonebook
+          handleInput={handleInput}
+          handleSubmit={handleSubmit}
+          name={name}
+          number={number}
+        />
+      </Section>
+      <Section title="Contacts">
+        <>
+          <Filter name="filter" value={filter} onChange={handleInput} />
+          {filter === "" ? (
+            <Contacts contacts={contacts} handleDelete={handleDelete} />
+          ) : (
+            <FilteredContacts
+              contacts={contacts}
+              filter={filter}
+              handleDelete={handleDelete}
+            />
+          )}
+        </>
+      </Section>
+    </>
+  );
 }
 
 export default App;
